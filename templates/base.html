@@ -1,14 +1,22 @@
 {% from 'macros.html' import icon %}<!DOCTYPE html>
-<html lang="uk" class="no-js">
+<html lang="uk" class="no-js{% if mode == 'dark' %} dark{% endif %}" data-theme="{{ theme }}" data-mode="{{ mode }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% if title %}{{ title }} · {% endif %}Lynks — чистота без компромісів</title>
   <meta name="description" content="{% block description %}Професійні безфосфатні засоби для прання, кухні, ванної, авто та догляду за тілом. Lynks — чистота без компромісів.{% endblock %}">
-  <meta name="theme-color" content="#0b3b36">
+  <meta name="theme-color" content="{{ themes[theme].meta }}">
   <meta property="og:title" content="{{ title or 'Lynks — чистота без компромісів' }}">
   <meta property="og:type" content="website">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='18' fill='%230f766e'/><text x='32' y='45' font-family='Arial' font-weight='900' font-size='36' fill='%23d9f99d' text-anchor='middle'>L</text></svg>">
+  <script>
+    /* ставимо темний режим до малювання сторінки — без «блимання» */
+    (function () {
+      var d = document.documentElement, m = d.dataset.mode;
+      var dark = m === 'dark' || (m === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+      d.classList.toggle('dark', dark);
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@500;600;700&display=swap" rel="stylesheet">
@@ -54,6 +62,29 @@
       </nav>
 
       <div class="header__actions">
+        <div class="theme" data-theme-picker>
+          <button class="icon-btn" type="button" aria-label="Тема оформлення" aria-expanded="false" aria-haspopup="dialog" data-theme-toggle>
+            {{ icon('palette', 22) }}
+          </button>
+          <div class="theme__panel" role="dialog" aria-label="Тема оформлення" data-theme-panel>
+            <p class="theme__label">Режим</p>
+            <div class="seg" role="radiogroup" aria-label="Режим">
+              {% for key, label in modes.items() %}
+              <button type="button" role="radio" class="seg__btn{% if mode == key %} is-active{% endif %}" aria-checked="{{ 'true' if mode == key else 'false' }}" data-mode-set="{{ key }}">
+                {{ icon({'auto': 'auto', 'light': 'sun', 'dark': 'moon'}[key], 16) }}<span>{{ label }}</span>
+              </button>
+              {% endfor %}
+            </div>
+            <p class="theme__label">Колір</p>
+            <div class="swatches" role="radiogroup" aria-label="Колір">
+              {% for key, t in themes.items() %}
+              <button type="button" role="radio" class="swatch{% if theme == key %} is-active{% endif %}" aria-checked="{{ 'true' if theme == key else 'false' }}" data-theme-set="{{ key }}" data-meta="{{ t.meta }}" style="--s: {{ t.swatch }}">
+                <span class="swatch__dot"></span><span>{{ t.name }}</span>
+              </button>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
         <form class="search" action="{{ url_for('catalog') }}" method="get" role="search">
           {{ icon('search', 18) }}
           <input type="search" name="q" placeholder="Пошук засобів…" value="{{ q or '' }}" aria-label="Пошук товарів" autocomplete="off">
@@ -97,6 +128,8 @@
           <li><a href="{{ url_for('catalog') }}">Усі товари</a></li>
           <li><a href="{{ url_for('view_cart') }}">Кошик</a></li>
           <li><a href="{{ url_for('index') }}#about">Про нас</a></li>
+          <li><a href="{{ url_for('cookies_policy') }}">Політика cookie</a></li>
+          <li><button class="footer__link" type="button" data-cookie-open>Налаштування cookie</button></li>
         </ul>
       </div>
     </div>
@@ -107,5 +140,30 @@
   </footer>
 
   <div class="toasts" aria-live="polite" aria-atomic="false"></div>
+
+  <section class="cookie" role="dialog" aria-labelledby="cookie-title" aria-describedby="cookie-text" data-cookie {% if consent %}hidden{% endif %}>
+    <div class="cookie__head">
+      <span class="cookie__emoji" aria-hidden="true">🍪</span>
+      <div>
+        <h2 id="cookie-title">Трохи cookie для чистоти</h2>
+        <p id="cookie-text">Ми використовуємо cookie, щоб працював кошик і запам'ятовувалась ваша тема. Жодної реклами чи стеження. <a href="{{ url_for('cookies_policy') }}">Докладніше</a></p>
+      </div>
+    </div>
+    <div class="cookie__prefs" data-cookie-prefs hidden>
+      <label class="toggle is-locked">
+        <span><b>Необхідні</b><small>Кошик, сесія та ваш вибір щодо cookie. Без них сайт не працює.</small></span>
+        <input type="checkbox" checked disabled><i aria-hidden="true"></i>
+      </label>
+      <label class="toggle">
+        <span><b>Налаштування</b><small>Запам'ятовують тему й колір оформлення на рік.</small></span>
+        <input type="checkbox" data-cookie-pref {% if consent == 'all' or not consent %}checked{% endif %}><i aria-hidden="true"></i>
+      </label>
+    </div>
+    <div class="cookie__actions">
+      <button class="btn btn--ghost" type="button" data-cookie-customize>Налаштувати</button>
+      <button class="btn btn--ghost" type="button" data-cookie-save="necessary">Лише необхідні</button>
+      <button class="btn btn--primary" type="button" data-cookie-save="all">Прийняти всі</button>
+    </div>
+  </section>
 </body>
 </html>

@@ -475,3 +475,132 @@ if (wipe) {
     clearTimeout(rt); rt = setTimeout(() => { paintGrime(); update(); }, 200);
   });
 }
+
+/* ---------------------------------------------------------------- cookie-утиліти */
+const Cookie = {
+  get(name) {
+    const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+    return m ? decodeURIComponent(m[1]) : null;
+  },
+  set(name, value, days) {
+    let c = `${name}=${encodeURIComponent(value)}; path=/; SameSite=Lax`;
+    if (days) c += `; max-age=${days * 86400}`;
+    if (location.protocol === 'https:') c += '; Secure';
+    document.cookie = c;
+  },
+};
+// налаштування зберігаємо на рік лише за згоди «всі», інакше — до закриття браузера
+const prefDays = () => (Cookie.get('lynks_consent') === 'all' ? 365 : 0);
+
+/* ---------------------------------------------------------------- теми */
+const root = document.documentElement;
+const darkMQ = matchMedia('(prefers-color-scheme: dark)');
+
+function applyMode(mode) {
+  root.dataset.mode = mode;
+  root.classList.toggle('dark', mode === 'dark' || (mode === 'auto' && darkMQ.matches));
+}
+darkMQ.addEventListener?.('change', () => { if (root.dataset.mode === 'auto') applyMode('auto'); });
+
+function withTransition(fn, origin) {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!document.startViewTransition || reduce) {
+    root.classList.add('theme-switching');
+    fn();
+    setTimeout(() => root.classList.remove('theme-switching'), 400);
+    return;
+  }
+  root.classList.add('vt-theme');
+  const t = document.startViewTransition(fn);
+  t.ready.then(() => {
+    const x = origin?.x ?? innerWidth - 60, y = origin?.y ?? 40;
+    const r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    root.animate(
+      { clipPath: [`circle(0 at ${x}px ${y}px)`, `circle(${r}px at ${x}px ${y}px)`] },
+      { duration: 650, easing: 'cubic-bezier(.2,.8,.2,1)', pseudoElement: '::view-transition-new(root)' }
+    );
+  });
+  t.finished.finally(() => root.classList.remove('vt-theme'));
+}
+
+const picker = $('[data-theme-picker]');
+if (picker) {
+  const toggle = $('[data-theme-toggle]', picker);
+  const setOpen = (v) => { picker.classList.toggle('is-open', v); toggle.setAttribute('aria-expanded', v); };
+  toggle.addEventListener('click', (e) => { e.stopPropagation(); setOpen(!picker.classList.contains('is-open')); });
+  document.addEventListener('click', (e) => { if (!picker.contains(e.target)) setOpen(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
+
+  const mark = (sel, attr, val) => $$(sel, picker).forEach((b) => {
+    const on = b.dataset[attr] === val;
+    b.classList.toggle('is-active', on);
+    b.setAttribute('aria-checked', on);
+  });
+
+  picker.addEventListener('click', (e) => {
+    const point = { x: e.clientX, y: e.clientY };
+    const m = e.target.closest('[data-mode-set]');
+    const t = e.target.closest('[data-theme-set]');
+    if (m) {
+      const mode = m.dataset.modeSet;
+      withTransition(() => applyMode(mode), point);
+      Cookie.set('lynks_mode', mode, prefDays());
+      mark('[data-mode-set]', 'modeSet', mode);
+    }
+    if (t) {
+      const theme = t.dataset.themeSet;
+      withTransition(() => { root.dataset.theme = theme; }, point);
+      $('meta[name="theme-color"]')?.setAttribute('content', t.dataset.meta);
+      Cookie.set('lynks_theme', theme, prefDays());
+      mark('[data-theme-set]', 'themeSet', theme);
+    }
+  });
+}
+
+/* ---------------------------------------------------------------- cookie-банер */
+const banner = $('[data-cookie]');
+if (banner) {
+  const prefsBox = $('[data-cookie-prefs]', banner);
+  const prefInput = $('[data-cookie-pref]', banner);
+
+  const open = (custom = false) => {
+    banner.hidden = false;
+    banner.classList.remove('is-leaving');
+    banner.classList.toggle('is-custom', custom);
+    prefsBox.hidden = !custom;
+    prefInput.checked = Cookie.get('lynks_consent') !== 'necessary';
+  };
+  const close = () => {
+    banner.classList.add('is-leaving');
+    banner.addEventListener('animationend', () => { banner.hidden = true; banner.classList.remove('is-leaving'); }, { once: true });
+  };
+
+  function save(choice) {
+    Cookie.set('lynks_consent', choice, 365);
+    // перезаписуємо налаштування теми з потрібним строком життя
+    const days = choice === 'all' ? 365 : 0;
+    ['lynks_theme', 'lynks_mode'].forEach((n) => {
+      const v = Cookie.get(n);
+      if (v) Cookie.set(n, v, days);
+    });
+    const label = $('[data-consent-label]');
+    if (label) label.textContent = choice === 'all' ? 'Прийнято всі cookie' : 'Лише необхідні cookie';
+    close();
+    toast({ title: 'Збережено 🍪', text: choice === 'all' ? 'Тема запам\'ятається на рік' : 'Лише необхідні cookie' });
+  }
+
+  $('[data-cookie-customize]', banner).addEventListener('click', () => open(true));
+  $$('[data-cookie-save]', banner).forEach((b) => b.addEventListener('click', () => {
+    let choice = b.dataset.cookieSave;
+    // у режимі налаштування головна кнопка зберігає вибір перемикача
+    if (choice === 'all' && banner.classList.contains('is-custom')) choice = prefInput.checked ? 'all' : 'necessary';
+    save(choice);
+  }));
+  $$('[data-cookie-open]').forEach((b) => b.addEventListener('click', () => open(true)));
+
+  // у режимі налаштування підписуємо головну кнопку інакше
+  const primary = $('[data-cookie-save="all"]', banner);
+  new MutationObserver(() => {
+    primary.textContent = banner.classList.contains('is-custom') ? 'Зберегти вибір' : 'Прийняти всі';
+  }).observe(banner, { attributes: true, attributeFilter: ['class'] });
+}

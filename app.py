@@ -43,6 +43,16 @@ TAG_SLUGS = {"Новинка": "new", "Акція": "sale", "Хіт": "hit",
 VOLUME_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s*(мл|л|кг|шт)\b", re.IGNORECASE)
 MAX_QTY = 99
 
+# Теми оформлення (ключ → назва, колір для перемикача, колір рядка браузера)
+THEMES = {
+    "eco":      {"name": "Еко",      "swatch": "#14b8a6", "meta": "#0b3b36"},
+    "ocean":    {"name": "Океан",    "swatch": "#0ea5e9", "meta": "#0c4a6e"},
+    "lavender": {"name": "Лаванда",  "swatch": "#a78bfa", "meta": "#3b0764"},
+    "citrus":   {"name": "Цитрус",   "swatch": "#fb923c", "meta": "#7c2d12"},
+}
+MODES = {"auto": "Авто", "light": "Світла", "dark": "Темна"}
+CONSENT_VALUES = {"all", "necessary"}
+
 
 # ------------------------------------------------------------------ helpers
 def _existing_images() -> set[str]:
@@ -118,7 +128,15 @@ def inject_globals():
     counts = {}
     for p in PRODUCTS.values():
         counts[p["category"]] = counts.get(p["category"], 0) + 1
+    theme = request.cookies.get("lynks_theme", "eco")
+    mode = request.cookies.get("lynks_mode", "auto")
+    consent = request.cookies.get("lynks_consent")
     return {
+        "theme": theme if theme in THEMES else "eco",
+        "mode": mode if mode in MODES else "auto",
+        "themes": THEMES,
+        "modes": MODES,
+        "consent": consent if consent in CONSENT_VALUES else None,
         "categories": CATEGORIES,
         "category_counts": counts,
         "cart_count": sum(get_cart().values()),
@@ -315,6 +333,11 @@ def placeholder(pid: int):
 </svg>"""
     return Response(svg, mimetype="image/svg+xml",
                     headers={"Cache-Control": "public, max-age=604800"})
+
+
+@app.route("/cookies")
+def cookies_policy():
+    return render_template("cookies.html", title="Політика cookie")
 
 
 @app.route("/healthz")

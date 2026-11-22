@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import icon %}
+{% block content %}
+<section class="page-head page-head--slim">
+  <div class="container">
+    <nav class="crumbs" aria-label="Навігація">
+      <a href="{{ url_for('index') }}">Головна</a><span>/</span><span aria-current="page">Політика cookie</span>
+    </nav>
+    <h1 class="page-title"><span class="page-title__emoji">🍪</span> Політика cookie</h1>
+    <p class="page-sub">Коротко і по-людськи: що ми зберігаємо у вашому браузері й навіщо.</p>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="container prose">
+    <div class="prose__status reveal">
+      <div>
+        <b>Ваш поточний вибір</b>
+        <span data-consent-label>{% if consent == 'all' %}Прийнято всі cookie{% elif consent == 'necessary' %}Лише необхідні cookie{% else %}Ще не обрано{% endif %}</span>
+      </div>
+      <button class="btn btn--primary" type="button" data-cookie-open>Змінити налаштування</button>
+    </div>
+
+    <h2>Що таке cookie</h2>
+    <p>Cookie — це невеликі текстові файли, які сайт зберігає у вашому браузері. Вони допомагають, наприклад, не втрачати товари в кошику під час переходу між сторінками.</p>
+
+    <h2>Які cookie використовує Lynks</h2>
+    <div class="table-wrap reveal">
+      <table class="table">
+        <thead><tr><th>Назва</th><th>Тип</th><th>Навіщо</th><th>Строк</th></tr></thead>
+        <tbody>
+          <tr><td><code>session</code></td><td><span class="pill pill--need">Необхідний</span></td><td>Зберігає вміст кошика. Підписаний і захищений від підробки.</td><td>До закриття браузера</td></tr>
+          <tr><td><code>lynks_consent</code></td><td><span class="pill pill--need">Необхідний</span></td><td>Пам'ятає ваш вибір щодо cookie, щоб не питати щоразу.</td><td>1 рік</td></tr>
+          <tr><td><code>lynks_theme</code></td><td><span class="pill pill--pref">Налаштування</span></td><td>Обрана кольорова тема (Еко, Океан, Лаванда, Цитрус).</td><td>1 рік*</td></tr>
+          <tr><td><code>lynks_mode</code></td><td><span class="pill pill--pref">Налаштування</span></td><td>Світлий, темний або автоматичний режим.</td><td>1 рік*</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="prose__note">* Якщо ви обрали «Лише необхідні», тема діє тільки до закриття браузера.</p>
+
+    <h2>Чого ми не робимо</h2>
+    <ul class="checks">
+      <li>{{ icon('check', 18) }} Не використовуємо рекламні та відстежувальні cookie.</li>
+      <li>{{ icon('check', 18) }} Не передаємо дані cookie третім особам.</li>
+      <li>{{ icon('check', 18) }} Не продаємо ваші дані.</li>
+    </ul>
+
+    <h2>Сторонні сервіси</h2>
+    <p>Шрифти сайту завантажуються з Google Fonts. Під час цього ваш браузер звертається до серверів Google, але cookie Lynks при цьому не передаються.</p>
+
+    <h2>Як керувати cookie</h2>
+    <p>Змінити вибір можна будь-коли кнопкою вище або посиланням «Налаштування cookie» внизу сторінки. Також cookie можна видалити в налаштуваннях браузера — тоді кошик очиститься, а тема повернеться до стандартної.</p>
+  </div>
+</section>
+{% endblock %}
