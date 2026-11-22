@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import icon, product_card %}
+{% block body_class %}page-home{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <div class="hero__bg" aria-hidden="true">
+    <span class="blob blob--1"></span><span class="blob blob--2"></span><span class="blob blob--3"></span>
+    {% for i in range(14) %}<i class="bubble" style="--x: {{ (i * 37) % 100 }}%; --s: {{ 10 + (i * 7) % 28 }}px; --t: {{ 9 + (i * 3) % 10 }}s; --delay: -{{ (i * 1.7)|round(1) }}s"></i>{% endfor %}
+  </div>
+  <div class="container hero__inner">
+    <div class="hero__copy">
+      <span class="eyebrow">{{ icon('leaf', 16) }} Безфосфатні формули</span>
+      <h1 class="hero__title">Чистота,<br>що <em>дбає</em> про&nbsp;дім</h1>
+      <p class="hero__lead">Професійні засоби Lynks для прання, кухні, ванної, підлоги та авто. Ефективно для бізнесу, безпечно для родини.</p>
+      <div class="hero__cta">
+        <a class="btn btn--primary btn--lg" href="{{ url_for('catalog') }}">Перейти до каталогу {{ icon('arrow', 18) }}</a>
+        <a class="btn btn--ghost btn--lg" href="#highlights">Хіти продажів</a>
+      </div>
+      <dl class="hero__stats">
+        <div><dt>{{ total_products }}+</dt><dd>товарів</dd></div>
+        <div><dt>{{ categories|length }}</dt><dd>категорій</dd></div>
+        <div><dt>до 20&nbsp;л</dt><dd>вигідні об'єми</dd></div>
+      </dl>
+    </div>
+
+    <div class="hero__visual" aria-hidden="true">
+      <div class="orbit"></div>
+      {% for p in highlights[:3] %}
+      <a href="{{ p.url }}" class="float-card float-card--{{ loop.index }}" tabindex="-1">
+        <img src="{{ p.image }}" alt="">
+        <div><b>{{ p.name.split(',')[0]|truncate(34, true, '…') }}</b><span>{{ p.price|money }}</span></div>
+      </a>
+      {% endfor %}
+      <div class="hero__chip hero__chip--a">{{ icon('shield', 16) }} Безпечно для тканин</div>
+      <div class="hero__chip hero__chip--b">{{ icon('drop', 16) }} Концентровані формули</div>
+    </div>
+  </div>
+</section>
+
+<div class="marquee" aria-hidden="true">
+  <div class="marquee__track">
+    {% for _ in range(2) %}
+    <span>Безфосфатні гелі</span><span>✦</span><span>Кисневі відбілювачі</span><span>✦</span>
+    <span>Автохімія EXOL</span><span>✦</span><span>Рідке мило</span><span>✦</span>
+    <span>Професійні об'єми 5–20 л</span><span>✦</span><span>Vesna косметика</span><span>✦</span>
+    {% endfor %}
+  </div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <header class="section__head reveal">
+      <div>
+        <span class="eyebrow">Категорії</span>
+        <h2>Знайдіть свій засіб</h2>
+      </div>
+      <a class="link-arrow" href="{{ url_for('catalog') }}">Увесь каталог {{ icon('arrow', 18) }}</a>
+    </header>
+    <div class="bento">
+      {% for key, c in categories.items() %}
+      <a class="tile reveal" href="{{ url_for('catalog', category_name=key) }}" style="--c: {{ c.color }}; --d: {{ loop.index0 * 50 }}ms">
+        <span class="tile__emoji">{{ c.emoji }}</span>
+        <span class="tile__text">
+          <b>{{ c.short }}</b>
+          <small>{{ c.title }}</small>
+        </span>
+        <span class="tile__count">{{ category_counts.get(key, 0) }}</span>
+        <span class="tile__arrow">{{ icon('arrow', 18) }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section" id="highlights">
+  <div class="container">
+    <header class="section__head reveal">
+      <div>
+        <span class="eyebrow">🔥 Актуальні пропозиції</span>
+        <h2>Хіти, акції та новинки</h2>
+      </div>
+    </header>
+    <div class="grid">
+      {% for p in highlights %}{{ product_card(p, loop.index0) }}{% endfor %}
+    </div>
+  </div>
+</section>
+
+{% if deals %}
+<section class="section section--tint">
+  <div class="container">
+    <header class="section__head reveal">
+      <div>
+        <span class="eyebrow">Знижки</span>
+        <h2>Встигніть за вигідною ціною</h2>
+      </div>
+      <a class="link-arrow" href="{{ url_for('deals') }}">Усі акції {{ icon('arrow', 18) }}</a>
+    </header>
+    <div class="rail" data-rail>
+      {% for p in deals %}{{ product_card(p, loop.index0) }}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="section" id="about">
+  <div class="container">
+    <header class="section__head section__head--center reveal">
+      <div>
+        <span class="eyebrow">Чому Lynks</span>
+        <h2>Чистота без компромісів</h2>
+        <p>Ми поєднуємо професійну ефективність із турботою про людей і довкілля.</p>
+      </div>
+    </header>
+    <div class="features">
+      <div class="feature reveal" style="--d: 0ms"><span class="feature__icon">{{ icon('leaf', 26) }}</span><h3>Безфосфатні формули</h3><p>М'які до тканин і шкіри, дружні до довкілля.</p></div>
+      <div class="feature reveal" style="--d: 80ms"><span class="feature__icon">{{ icon('drop', 26) }}</span><h3>Концентрати</h3><p>Менша витрата — більше прань і прибирань.</p></div>
+      <div class="feature reveal" style="--d: 160ms"><span class="feature__icon">{{ icon('box', 26) }}</span><h3>Вигідні об'єми</h3><p>Від 500 мл для дому до 20 л для бізнесу.</p></div>
+      <div class="feature reveal" style="--d: 240ms"><span class="feature__icon">{{ icon('shield', 26) }}</span><h3>Для дому й бізнесу</h3><p>Від прання до автомийки — усе в одному місці.</p></div>
+    </div>
+  </div>
+</section>
+
+{% if novelties %}
+<section class="section">
+  <div class="container">
+    <header class="section__head reveal">
+      <div><span class="eyebrow">✨ Новинки</span><h2>Щойно в асортименті</h2></div>
+    </header>
+    <div class="rail" data-rail>
+      {% for p in novelties %}{{ product_card(p, loop.index0) }}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="section">
+  <div class="container">
+    <div class="cta reveal">
+      <div>
+        <h2>Закуповуєте для бізнесу?</h2>
+        <p>Професійні об'єми 5, 10 та 20 літрів — для клінінгу, пралень, автомийок і HoReCa.</p>
+      </div>
+      <a class="btn btn--light btn--lg" href="{{ url_for('catalog', category_name='auto_care') }}">Професійна лінійка {{ icon('arrow', 18) }}</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

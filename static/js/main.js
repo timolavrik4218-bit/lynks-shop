@@ -1,0 +1,279 @@
+/* Lynks — інтерактив сайту (без залежностей) */
+document.documentElement.classList.remove('no-js');
+
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+
+/* ---------------------------------------------------------------- API */
+async function api(url, body) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(body),
+    credentials: 'same-origin',
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.success) throw new Error(data.message || 'Помилка сервера');
+  return data;
+}
+
+function setCartCount(n) {
+  $$('[data-cart-count]').forEach((el) => {
+    el.textContent = n;
+    el.hidden = !n;
+  });
+  const btn = $('.cart-btn');
+  if (btn) {
+    btn.classList.remove('bump');
+    void btn.offsetWidth; // restart animation
+    btn.classList.add('bump');
+  }
+}
+
+/* ---------------------------------------------------------------- toasts */
+function toast({ title, text = '', img, link, error = false }) {
+  const wrap = $('.toasts');
+  if (!wrap) return;
+  const el = document.createElement('div');
+  el.className = 'toast' + (error ? ' toast--error' : '');
+  if (img) {
+    const i = document.createElement('img');
+    i.src = img; i.alt = '';
+    el.append(i);
+  }
+  const box = document.createElement('div');
+  const b = document.createElement('b'); b.textContent = title;
+  const s = document.createElement('span'); s.textContent = text;
+  box.append(b, s);
+  el.append(box);
+  if (link) {
+    const a = document.createElement('a');
+    a.href = link.href; a.textContent = link.label;
+    el.append(a);
+  }
+  wrap.append(el);
+  while (wrap.children.length > 3) wrap.firstElementChild.remove();
+  setTimeout(() => {
+    el.classList.add('is-leaving');
+    el.addEventListener('animationend', () => el.remove(), { once: true });
+  }, 3200);
+}
+
+/* ---------------------------------------------------------------- fly to cart */
+function flyToCart(img) {
+  const target = $('.cart-btn');
+  if (!img || !target || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const a = img.getBoundingClientRect();
+  const b = target.getBoundingClientRect();
+  const fly = document.createElement('img');
+  fly.src = img.currentSrc || img.src;
+  fly.className = 'fly';
+  fly.style.left = `${a.left + a.width / 2 - 32}px`;
+  fly.style.top = `${a.top + a.height / 2 - 32}px`;
+  document.body.append(fly);
+  const dx = b.left + b.width / 2 - (a.left + a.width / 2);
+  const dy = b.top + b.height / 2 - (a.top + a.height / 2);
+  fly.animate(
+    [
+      { transform: 'translate(0,0) scale(1)', opacity: 1 },
+      { transform: `translate(${dx * 0.6}px, ${dy - 80}px) scale(.8)`, opacity: 1, offset: 0.6 },
+      { transform: `translate(${dx}px, ${dy}px) scale(.2)`, opacity: 0.2 },
+    ],
+    { duration: 750, easing: 'cubic-bezier(.5,0,.2,1)' }
+  ).onfinish = () => fly.remove();
+}
+
+/* ---------------------------------------------------------------- add to cart */
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-add]');
+  if (!btn || btn.disabled) return;
+  e.preventDefault();
+
+  const id = btn.dataset.add;
+  const qtyInput = btn.hasAttribute('data-add-qty') ? $('[data-qty]') : null;
+  const qty = qtyInput ? Math.max(1, Math.min(99, parseInt(qtyInput.value, 10) || 1)) : 1;
+  const scope = btn.closest('.card, .pdp');
+  const img = scope && $('img', scope);
+  const name = scope && ($('.card__title, .pdp__title', scope)?.textContent.trim() || '');
+
+  btn.disabled = true;
+  try {
+    const data = await api('/api/cart/add', { product_id: id, qty });
+    flyToCart(img);
+    setTimeout(() => setCartCount(data.total_items), 600);
+    btn.classList.add('is-added');
+    const label = $('span', btn);
+    const prev = label?.textContent;
+    if (label) label.textContent = 'Додано ✓';
+    setTimeout(() => {
+      btn.classList.remove('is-added');
+      if (label) label.textContent = prev;
+    }, 1400);
+    toast({
+      title: qty > 1 ? `Додано ${qty} шт.` : 'Додано в кошик',
+      text: name,
+      img: img?.src,
+      link: { href: '/cart', label: 'Кошик →' },
+    });
+  } catch (err) {
+    toast({ title: 'Не вдалося додати', text: err.message, error: true });
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+/* ---------------------------------------------------------------- stepper (product page) */
+$$('[data-stepper]').forEach((st) => {
+  const input = $('[data-qty]', st);
+  st.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-step]');
+    if (!b) return;
+    input.value = Math.max(1, Math.min(99, (parseInt(input.value, 10) || 1) + Number(b.dataset.step)));
+  });
+  input.addEventListener('change', () => {
+    input.value = Math.max(1, Math.min(99, parseInt(input.value, 10) || 1));
+  });
+});
+
+/* ---------------------------------------------------------------- cart page */
+const cartEl = $('[data-cart]');
+if (cartEl) {
+  cartEl.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-cart-action]');
+    if (!btn) return;
+    const line = btn.closest('[data-line]');
+    const action = btn.dataset.cartAction;
+    $$('button', line).forEach((b) => (b.disabled = true));
+    try {
+      const data = await api('/api/cart/update', { product_id: btn.dataset.id, action });
+      setCartCount(data.total_items);
+      $('[data-cart-total]').textContent = data.total_price_fmt;
+      $('[data-cart-count-text]').textContent = data.total_items;
+      if (data.quantity > 0) {
+        $('[data-line-qty]', line).textContent = data.quantity;
+        $('[data-line-sum]', line).textContent = data.subtotal_fmt;
+      } else {
+        line.classList.add('is-removing');
+        setTimeout(() => line.remove(), 350);
+      }
+      if (data.total_items === 0) {
+        setTimeout(() => {
+          cartEl.remove();
+          $('[data-cart-empty]').hidden = false;
+        }, 360);
+      }
+    } catch (err) {
+      toast({ title: 'Помилка', text: err.message, error: true });
+    } finally {
+      $$('button', line).forEach((b) => (b.disabled = false));
+    }
+  });
+
+  // проста клієнтська валідація форми
+  const form = $('[data-checkout]');
+  form?.addEventListener('submit', (e) => {
+    let ok = true;
+    $$('.field', form).forEach((f) => {
+      const input = $('input, textarea', f);
+      let msg = '';
+      if (input.name === 'name' && input.value.trim().length < 2) msg = "Вкажіть ім'я";
+      if (input.name === 'phone' && input.value.replace(/\D/g, '').length < 10) msg = 'Вкажіть коректний номер телефону';
+      if (input.name === 'city' && input.value.trim().length < 2) msg = 'Вкажіть місто';
+      let small = $('small', f);
+      f.classList.toggle('has-error', !!msg);
+      if (msg) {
+        if (!small) { small = document.createElement('small'); f.append(small); }
+        small.textContent = msg;
+        if (ok) input.focus();
+        ok = false;
+      } else small?.remove();
+    });
+    if (!ok) e.preventDefault();
+    else $('button[type=submit]', form).disabled = true;
+  });
+}
+
+/* ---------------------------------------------------------------- catalog: filter + sort */
+const grid = $('[data-grid]');
+if (grid) {
+  const cards = $$('.card', grid);
+  const counter = $('[data-visible-count]');
+  const empty = $('[data-empty]');
+  let filter = '';
+
+  const apply = () => {
+    let visible = 0;
+    cards.forEach((c) => {
+      const show = !filter || c.dataset.tag === filter;
+      c.classList.toggle('is-hidden', !show);
+      if (show) visible++;
+    });
+    if (counter) counter.textContent = visible;
+    if (empty) empty.hidden = visible > 0;
+  };
+
+  $$('[data-filter]').forEach((b) =>
+    b.addEventListener('click', () => {
+      $$('[data-filter]').forEach((x) => x.classList.toggle('is-active', x === b));
+      filter = b.dataset.filter;
+      apply();
+    })
+  );
+
+  $('[data-sort]')?.addEventListener('change', (e) => {
+    const v = e.target.value;
+    const sorted = [...cards].sort((a, b) => {
+      if (v === 'price-asc') return a.dataset.price - b.dataset.price;
+      if (v === 'price-desc') return b.dataset.price - a.dataset.price;
+      if (v === 'name') return a.dataset.name.localeCompare(b.dataset.name, 'uk');
+      return a.dataset.order - b.dataset.order;
+    });
+    const run = () => sorted.forEach((c) => grid.append(c));
+    document.startViewTransition ? document.startViewTransition(run) : run();
+  });
+}
+
+/* ---------------------------------------------------------------- header, nav, dropdown */
+const header = $('#header');
+const onScroll = () => header?.classList.toggle('is-scrolled', scrollY > 8);
+addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+
+const nav = $('#nav');
+const burger = $('.burger');
+burger?.addEventListener('click', () => {
+  const open = nav.classList.toggle('is-open');
+  burger.setAttribute('aria-expanded', open);
+  document.body.style.overflow = open ? 'hidden' : '';
+});
+
+const drop = $('.nav__drop');
+if (drop) {
+  const toggle = $('.nav__toggle', drop);
+  const setOpen = (v) => { drop.classList.toggle('is-open', v); toggle.setAttribute('aria-expanded', v); };
+  let t;
+  const hoverable = matchMedia('(hover: hover) and (min-width: 901px)');
+  drop.addEventListener('mouseenter', () => { if (hoverable.matches) { clearTimeout(t); setOpen(true); } });
+  drop.addEventListener('mouseleave', () => { if (hoverable.matches) t = setTimeout(() => setOpen(false), 220); });
+  toggle.addEventListener('click', () => setOpen(!drop.classList.contains('is-open')));
+  document.addEventListener('click', (e) => { if (!drop.contains(e.target) && hoverable.matches) setOpen(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
+}
+
+/* ---------------------------------------------------------------- reveal on scroll */
+const io = 'IntersectionObserver' in window
+  ? new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if (en.isIntersecting) { en.target.classList.add('is-visible'); io.unobserve(en.target); }
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 })
+  : null;
+$$('.reveal').forEach((el) => (io ? io.observe(el) : el.classList.add('is-visible')));
+
+/* ---------------------------------------------------------------- image fallback */
+document.addEventListener('error', (e) => {
+  const img = e.target;
+  if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+  const id = img.closest('[data-id]')?.dataset.id;
+  if (id) { img.dataset.fallback = '1'; img.src = `/placeholder/${id}.svg`; }
+}, true);

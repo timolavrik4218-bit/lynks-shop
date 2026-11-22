@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import icon %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="success reveal">
+      <div class="success__check">{{ icon('check', 44) }}</div>
+      <h1>Дякуємо, {{ order.name.split(' ')[0] }}!</h1>
+      <p>Замовлення <b>#{{ order.id }}</b> прийнято. Ми зателефонуємо на {{ order.phone }} для підтвердження.</p>
+      <div class="success__list">
+        {% for i in order['items'] %}
+        <div><span>{{ i.name }} × {{ i.qty }}</span><b>{{ (i.price * i.qty)|money }}</b></div>
+        {% endfor %}
+        <div class="success__total"><span>Разом</span><b>{{ order.total|money }}</b></div>
+      </div>
+      <a class="btn btn--primary btn--lg" href="{{ url_for('catalog') }}">Продовжити покупки {{ icon('arrow', 18) }}</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

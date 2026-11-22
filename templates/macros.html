@@ -1,0 +1,49 @@
+{% macro icon(name, size=20) -%}
+<svg class="icon" width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{%- if name == 'cart' -%}<path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6.2"/><circle cx="10" cy="20.5" r="1.2"/><circle cx="17" cy="20.5" r="1.2"/>
+{%- elif name == 'search' -%}<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+{%- elif name == 'menu' -%}<path d="M4 7h16M4 12h16M4 17h10"/>
+{%- elif name == 'close' -%}<path d="M6 6l12 12M18 6 6 18"/>
+{%- elif name == 'plus' -%}<path d="M12 5v14M5 12h14"/>
+{%- elif name == 'minus' -%}<path d="M5 12h14"/>
+{%- elif name == 'trash' -%}<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>
+{%- elif name == 'arrow' -%}<path d="M5 12h14M13 6l6 6-6 6"/>
+{%- elif name == 'chevron' -%}<path d="m6 9 6 6 6-6"/>
+{%- elif name == 'leaf' -%}<path d="M11 20A7 7 0 0 1 4 13c0-6 6-9 16-9 0 10-3 16-9 16Z"/><path d="M4 20c4-4 7-6 11-8"/>
+{%- elif name == 'shield' -%}<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/>
+{%- elif name == 'drop' -%}<path d="M12 3s7 7.5 7 12a7 7 0 0 1-14 0c0-4.5 7-12 7-12Z"/>
+{%- elif name == 'box' -%}<path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"/><path d="m3 8 9 5 9-5M12 13v8"/>
+{%- elif name == 'check' -%}<path d="m5 12 5 5 9-10"/>
+{%- elif name == 'sparkle' -%}<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>
+{%- endif -%}
+</svg>
+{%- endmacro %}
+
+{% macro product_card(p, loop_index=0) -%}
+<article class="card reveal" style="--d: {{ (loop_index % 8) * 60 }}ms"
+         data-id="{{ p.id }}" data-price="{{ p.price }}" data-name="{{ p.name|lower }}"
+         data-tag="{{ p.tag_slug if p.tag else '' }}" data-order="{{ loop_index }}">
+  <a class="card__media{% if "/placeholder/" in p.image %} card__media--ph{% endif %}" href="{{ p.url }}" aria-label="{{ p.name }}">
+    <img src="{{ p.image }}" alt="{{ p.name }}" loading="lazy" decoding="async">
+    {% if p.tag %}<span class="badge badge--{{ p.tag_slug }}">{{ p.tag }}</span>{% endif %}
+    {% if p.discount %}<span class="discount">−{{ p.discount }}%</span>{% endif %}
+  </a>
+  <div class="card__body">
+    <div class="card__meta">
+      <span>{{ p.category_title }}</span>
+      {% if p.volume %}<span class="dot">{{ p.volume }}</span>{% endif %}
+    </div>
+    <h3 class="card__title"><a href="{{ p.url }}">{{ p.name }}</a></h3>
+    <p class="card__desc">{{ p.desc }}</p>
+    <div class="card__foot">
+      <div class="price">
+        {% if p.price_old %}<s>{{ p.price_old|money }}</s>{% endif %}
+        <strong>{{ p.price|money }}</strong>
+      </div>
+      <button class="btn-add" type="button" data-add="{{ p.id }}" aria-label="Додати «{{ p.name }}» в кошик">
+        {{ icon('cart', 18) }}<span>В кошик</span>
+      </button>
+    </div>
+  </div>
+</article>
+{%- endmacro %}

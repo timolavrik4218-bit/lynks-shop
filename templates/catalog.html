@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import icon, product_card %}
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <nav class="crumbs" aria-label="Навігація">
+      <a href="{{ url_for('index') }}">Головна</a><span>/</span>
+      {% if active_category %}<a href="{{ url_for('catalog') }}">Каталог</a><span>/</span>{% endif %}
+      <span aria-current="page">{{ categories[active_category].short if active_category else title }}</span>
+    </nav>
+    <h1 class="page-title">
+      {% if active_category %}<span class="page-title__emoji">{{ categories[active_category].emoji }}</span>{% endif %}
+      {{ title }}
+    </h1>
+    <p class="page-sub"><span data-visible-count>{{ products|length }}</span> {{ 'товар' if products|length % 10 == 1 and products|length % 100 != 11 else ('товари' if products|length % 10 in [2,3,4] and products|length % 100 not in [12,13,14] else 'товарів') }}</p>
+
+    <div class="chips" role="list">
+      <a class="chip {% if not active_category and not is_deals %}is-active{% endif %}" href="{{ url_for('catalog') }}" role="listitem">Усі</a>
+      {% for key, c in categories.items() %}
+      <a class="chip {% if active_category == key %}is-active{% endif %}" href="{{ url_for('catalog', category_name=key) }}" style="--c: {{ c.color }}" role="listitem">
+        <span>{{ c.emoji }}</span>{{ c.short }}
+      </a>
+      {% endfor %}
+      <a class="chip chip--hot {% if is_deals %}is-active{% endif %}" href="{{ url_for('deals') }}" role="listitem">% Акції</a>
+    </div>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="container">
+    {% if products %}
+    <div class="toolbar" data-toolbar>
+      <div class="filters" role="group" aria-label="Фільтр за міткою">
+        <button class="filter is-active" type="button" data-filter="">Усі</button>
+        {% set tags = products|selectattr('tag')|map(attribute='tag')|unique|list %}
+        {% for t in tags %}
+        <button class="filter" type="button" data-filter="{{ products|selectattr('tag', 'equalto', t)|map(attribute='tag_slug')|first }}">{{ t }}</button>
+        {% endfor %}
+      </div>
+      <label class="select">
+        <span>Сортувати:</span>
+        <select data-sort>
+          <option value="default">За популярністю</option>
+          <option value="price-asc">Спочатку дешевші</option>
+          <option value="price-desc">Спочатку дорожчі</option>
+          <option value="name">За назвою</option>
+        </select>
+        {{ icon('chevron', 16) }}
+      </label>
+    </div>
+
+    <div class="grid" data-grid>
+      {% for p in products %}{{ product_card(p, loop.index0) }}{% endfor %}
+    </div>
+    <p class="empty-inline" data-empty hidden>За цим фільтром нічого не знайдено.</p>
+    {% else %}
+    <div class="empty">
+      <div class="empty__art">🔍</div>
+      <h2>Нічого не знайдено</h2>
+      <p>Спробуйте інший запит або перегляньте весь каталог.</p>
+      <a class="btn btn--primary" href="{{ url_for('catalog') }}">До каталогу</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

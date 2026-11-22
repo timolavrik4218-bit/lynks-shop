@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import icon %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="empty">
+      <div class="empty__art empty__art--big">404</div>
+      <h2>Цю сторінку вже відмили до блиску</h2>
+      <p>Сторінку не знайдено. Можливо, товар переїхав в іншу категорію.</p>
+      <a class="btn btn--primary btn--lg" href="{{ url_for('index') }}">На головну {{ icon('arrow', 18) }}</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

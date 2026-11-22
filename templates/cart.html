@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import icon %}
+{% block content %}
+<section class="page-head page-head--slim">
+  <div class="container">
+    <nav class="crumbs" aria-label="Навігація">
+      <a href="{{ url_for('index') }}">Головна</a><span>/</span><span aria-current="page">Кошик</span>
+    </nav>
+    <h1 class="page-title">Ваш кошик</h1>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="container">
+    <div class="empty" data-cart-empty {% if cart['items'] %}hidden{% endif %}>
+      <div class="empty__art">🛒</div>
+      <h2>Кошик порожній</h2>
+      <p>Додайте щось корисне для чистого дому — каталог чекає.</p>
+      <a class="btn btn--primary btn--lg" href="{{ url_for('catalog') }}">Перейти до каталогу {{ icon('arrow', 18) }}</a>
+    </div>
+
+    {% if cart['items'] %}
+    <div class="cart" data-cart>
+      <div class="cart__list">
+        {% for item in cart['items'] %}
+        <article class="line reveal" data-line="{{ item.id }}" style="--d: {{ loop.index0 * 50 }}ms">
+          <a class="line__img" href="{{ item.url }}"><img src="{{ item.image }}" alt="{{ item.name }}" loading="lazy"></a>
+          <div class="line__info">
+            <span class="line__cat">{{ item.category_title }}</span>
+            <a class="line__name" href="{{ item.url }}">{{ item.name }}</a>
+            <span class="line__price">{{ item.price|money }} / шт</span>
+          </div>
+          <div class="stepper stepper--sm">
+            <button type="button" data-cart-action="decrease" data-id="{{ item.id }}" aria-label="Менше">{{ icon('minus', 16) }}</button>
+            <output data-line-qty>{{ item.quantity }}</output>
+            <button type="button" data-cart-action="increase" data-id="{{ item.id }}" aria-label="Більше">{{ icon('plus', 16) }}</button>
+          </div>
+          <strong class="line__sum" data-line-sum>{{ item.subtotal|money }}</strong>
+          <button class="line__remove" type="button" data-cart-action="remove" data-id="{{ item.id }}" aria-label="Видалити">{{ icon('trash', 18) }}</button>
+        </article>
+        {% endfor %}
+      </div>
+
+      <aside class="summary">
+        <h2>Оформлення</h2>
+        <div class="summary__row"><span>Товарів</span><b data-cart-count-text>{{ cart.count }}</b></div>
+        <div class="summary__row summary__row--total"><span>Разом</span><b data-cart-total>{{ cart.total|money }}</b></div>
+
+        <form class="form" action="{{ url_for('checkout') }}" method="post" novalidate data-checkout>
+          {% set f = form or {} %}{% set e = errors or {} %}
+          <label class="field {% if e.name %}has-error{% endif %}">
+            <input name="name" placeholder=" " value="{{ f.name }}" required autocomplete="name">
+            <span>Ім'я та прізвище</span>
+            {% if e.name %}<small>{{ e.name }}</small>{% endif %}
+          </label>
+          <label class="field {% if e.phone %}has-error{% endif %}">
+            <input name="phone" type="tel" placeholder=" " value="{{ f.phone }}" required autocomplete="tel" inputmode="tel">
+            <span>Телефон</span>
+            {% if e.phone %}<small>{{ e.phone }}</small>{% endif %}
+          </label>
+          <label class="field {% if e.city %}has-error{% endif %}">
+            <input name="city" placeholder=" " value="{{ f.city }}" required autocomplete="address-level2">
+            <span>Місто</span>
+            {% if e.city %}<small>{{ e.city }}</small>{% endif %}
+          </label>
+          <label class="field">
+            <input name="delivery" placeholder=" " value="{{ f.delivery }}">
+            <span>Відділення / адреса доставки</span>
+          </label>
+          <label class="field">
+            <textarea name="comment" rows="2" placeholder=" ">{{ f.comment }}</textarea>
+            <span>Коментар (необов'язково)</span>
+          </label>
+          <button class="btn btn--primary btn--lg btn--block" type="submit">
+            Підтвердити замовлення {{ icon('arrow', 18) }}
+          </button>
+          <p class="form__note">Менеджер зв'яжеться з вами для підтвердження.</p>
+        </form>
+      </aside>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

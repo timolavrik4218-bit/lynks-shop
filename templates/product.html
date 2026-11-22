@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import icon, product_card %}
+{% block description %}{{ product.name }} — {{ product.desc }}{% endblock %}
+{% block content %}
+<section class="page-head page-head--slim">
+  <div class="container">
+    <nav class="crumbs" aria-label="Навігація">
+      <a href="{{ url_for('index') }}">Головна</a><span>/</span>
+      <a href="{{ url_for('catalog', category_name=product.category) }}">{{ product.category_title }}</a><span>/</span>
+      <span aria-current="page">{{ product.name|truncate(48) }}</span>
+    </nav>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="container pdp" style="--c: {{ categories[product.category].color }}">
+    <div class="pdp__gallery reveal">
+      <div class="pdp__image">
+        <img src="{{ product.image }}" alt="{{ product.name }}">
+        {% if product.tag %}<span class="badge badge--{{ product.tag_slug }}">{{ product.tag }}</span>{% endif %}
+        {% if product.discount %}<span class="discount">−{{ product.discount }}%</span>{% endif %}
+      </div>
+    </div>
+
+    <div class="pdp__info reveal" style="--d: 80ms">
+      <a class="pdp__cat" href="{{ url_for('catalog', category_name=product.category) }}">
+        {{ categories[product.category].emoji }} {{ product.category_full }}
+      </a>
+      <h1 class="pdp__title">{{ product.name }}</h1>
+      <p class="pdp__desc">{{ product.desc }}</p>
+
+      <ul class="pdp__specs">
+        {% if product.volume %}<li><span>Об'єм / вага</span><b>{{ product.volume }}</b></li>{% endif %}
+        <li><span>Категорія</span><b>{{ product.category_title }}</b></li>
+        <li><span>Артикул</span><b>LX-{{ '%04d'|format(product.id) }}</b></li>
+      </ul>
+
+      <div class="pdp__buy">
+        <div class="pdp__price">
+          {% if product.price_old %}<s>{{ product.price_old|money }}</s>{% endif %}
+          <strong>{{ product.price|money }}</strong>
+          {% if product.price_old %}<span class="save">Економія {{ (product.price_old - product.price)|money }}</span>{% endif %}
+        </div>
+        <div class="pdp__actions">
+          <div class="stepper" data-stepper>
+            <button type="button" data-step="-1" aria-label="Менше">{{ icon('minus', 18) }}</button>
+            <input type="number" value="1" min="1" max="99" inputmode="numeric" aria-label="Кількість" data-qty>
+            <button type="button" data-step="1" aria-label="Більше">{{ icon('plus', 18) }}</button>
+          </div>
+          <button class="btn btn--primary btn--lg btn--grow" type="button" data-add="{{ product.id }}" data-add-qty>
+            {{ icon('cart', 20) }} <span>Додати в кошик</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="pdp__perks">
+        <div>{{ icon('leaf', 20) }}<span>Турбота про довкілля</span></div>
+        <div>{{ icon('shield', 20) }}<span>Професійна якість</span></div>
+        <div>{{ icon('box', 20) }}<span>Ретельне пакування</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if related %}
+<section class="section">
+  <div class="container">
+    <header class="section__head reveal">
+      <div><span class="eyebrow">Схожі товари</span><h2>Вам також сподобається</h2></div>
+      <a class="link-arrow" href="{{ url_for('catalog', category_name=product.category) }}">Уся категорія {{ icon('arrow', 18) }}</a>
+    </header>
+    <div class="grid">
+      {% for p in related %}{{ product_card(p, loop.index0) }}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

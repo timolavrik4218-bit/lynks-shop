@@ -1,0 +1,111 @@
+{% from 'macros.html' import icon %}<!DOCTYPE html>
+<html lang="uk" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% if title %}{{ title }} · {% endif %}Lynks — чистота без компромісів</title>
+  <meta name="description" content="{% block description %}Професійні безфосфатні засоби для прання, кухні, ванної, авто та догляду за тілом. Lynks — чистота без компромісів.{% endblock %}">
+  <meta name="theme-color" content="#0b3b36">
+  <meta property="og:title" content="{{ title or 'Lynks — чистота без компромісів' }}">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='18' fill='%230f766e'/><text x='32' y='45' font-family='Arial' font-weight='900' font-size='36' fill='%23d9f99d' text-anchor='middle'>L</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="skip" href="#main">Перейти до вмісту</a>
+
+  <header class="header" id="header">
+    <div class="container header__inner">
+      <a class="logo" href="{{ url_for('index') }}" aria-label="Lynks — на головну">
+        <span class="logo__mark">L</span>
+        <span class="logo__text"><b>LYNKS</b><small>професійна чистота • Vesna</small></span>
+      </a>
+
+      <nav class="nav" id="nav" aria-label="Головне меню">
+        <form class="search search--mobile" action="{{ url_for('catalog') }}" method="get" role="search">
+          {{ icon('search', 18) }}
+          <input type="search" name="q" placeholder="Пошук засобів…" value="{{ q or '' }}" aria-label="Пошук товарів">
+        </form>
+        <a class="nav__link" href="{{ url_for('index') }}">Головна</a>
+        <div class="nav__drop">
+          <button class="nav__link nav__toggle" type="button" aria-expanded="false" aria-haspopup="true">
+            Каталог {{ icon('chevron', 16) }}
+          </button>
+          <div class="mega" role="menu">
+            <a class="mega__all" href="{{ url_for('catalog') }}" role="menuitem">
+              <span>Увесь каталог</span><small>{{ total_products }} товарів</small>{{ icon('arrow', 18) }}
+            </a>
+            <div class="mega__grid">
+              {% for key, c in categories.items() %}
+              <a class="mega__item" href="{{ url_for('catalog', category_name=key) }}" role="menuitem" style="--c: {{ c.color }}">
+                <span class="mega__emoji">{{ c.emoji }}</span>
+                <span><b>{{ c.short }}</b><small>{{ category_counts.get(key, 0) }} товарів</small></span>
+              </a>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        <a class="nav__link" href="{{ url_for('deals') }}">Акції <span class="nav__hot">%</span></a>
+        <a class="nav__link" href="{{ url_for('index') }}#about">Про нас</a>
+      </nav>
+
+      <div class="header__actions">
+        <form class="search" action="{{ url_for('catalog') }}" method="get" role="search">
+          {{ icon('search', 18) }}
+          <input type="search" name="q" placeholder="Пошук засобів…" value="{{ q or '' }}" aria-label="Пошук товарів" autocomplete="off">
+        </form>
+        <a class="cart-btn" href="{{ url_for('view_cart') }}" aria-label="Кошик">
+          {{ icon('cart', 22) }}
+          <span class="cart-btn__count" data-cart-count {% if not cart_count %}hidden{% endif %}>{{ cart_count }}</span>
+        </a>
+        <button class="burger" type="button" aria-label="Меню" aria-controls="nav" aria-expanded="false">
+          {{ icon('menu', 24) }}
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__grid">
+      <div class="footer__brand">
+        <a class="logo logo--light" href="{{ url_for('index') }}">
+          <span class="logo__mark">L</span>
+          <span class="logo__text"><b>LYNKS</b><small>професійна чистота • Vesna</small></span>
+        </a>
+        <p>Безпечні та ефективні засоби для дому, бізнесу й авто. Дбаємо про чистоту — і про планету.</p>
+      </div>
+      <div>
+        <h4>Каталог</h4>
+        <ul>
+          {% for key, c in categories.items() %}
+          <li><a href="{{ url_for('catalog', category_name=key) }}">{{ c.short }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div>
+        <h4>Покупцям</h4>
+        <ul>
+          <li><a href="{{ url_for('deals') }}">Акції</a></li>
+          <li><a href="{{ url_for('catalog') }}">Усі товари</a></li>
+          <li><a href="{{ url_for('view_cart') }}">Кошик</a></li>
+          <li><a href="{{ url_for('index') }}#about">Про нас</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="container footer__bottom">
+      <span>© {{ year }} Lynks. Усі права захищені.</span>
+      <span>Зроблено з {{ icon('leaf', 14) }} для чистого дому</span>
+    </div>
+  </footer>
+
+  <div class="toasts" aria-live="polite" aria-atomic="false"></div>
+</body>
+</html>
