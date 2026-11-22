@@ -5,6 +5,7 @@
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
@@ -121,6 +122,23 @@ def money(value: float) -> str:
 
 
 app.jinja_env.filters["money"] = money
+
+
+_ASSET_VERSIONS: dict[str, str] = {}
+
+
+def asset(filename: str) -> str:
+    """URL статичного файлу з хешем вмісту (?v=...), щоб браузер не тримав стару версію в кеші."""
+    if filename not in _ASSET_VERSIONS:
+        path = BASE_DIR / "static" / filename
+        try:
+            _ASSET_VERSIONS[filename] = hashlib.md5(path.read_bytes()).hexdigest()[:10]
+        except OSError:
+            _ASSET_VERSIONS[filename] = "0"
+    return url_for("static", filename=filename, v=_ASSET_VERSIONS[filename])
+
+
+app.jinja_env.globals["asset"] = asset
 
 
 @app.context_processor
