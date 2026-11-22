@@ -1,14 +1,63 @@
 {% extends 'base.html' %}
-{% from 'macros.html' import icon %}
+{% from 'macros.html' import icon, product_card %}
+{% block body_class %}page-404{% endblock %}
 {% block content %}
-<section class="section">
-  <div class="container">
-    <div class="empty">
-      <div class="empty__art empty__art--big">404</div>
-      <h2>Цю сторінку вже відмили до блиску</h2>
-      <p>Сторінку не знайдено. Можливо, товар переїхав в іншу категорію.</p>
-      <a class="btn btn--primary btn--lg" href="{{ url_for('index') }}">На головну {{ icon('arrow', 18) }}</a>
+<section class="nf" data-nf>
+  <div class="container nf__inner">
+    <div class="nf__copy">
+      <span class="eyebrow">{{ icon('sparkle', 16) }} Помилка 404</span>
+      <h1 class="nf__title" data-nf-title>Ой, тут хтось <em>наслідив</em></h1>
+      <p class="nf__lead" data-nf-lead>Такої сторінки немає — зате є брудна пляма. Візьміть губку й протріть екран: раптом під нею щось цікаве?</p>
+
+      <div class="nf__meter" role="group" aria-label="Рівень чистоти">
+        <div class="nf__meter-top"><span>Чистота</span><b data-nf-percent>0%</b></div>
+        <div class="nf__bar"><i data-nf-bar></i></div>
+      </div>
+
+      <div class="nf__actions">
+        <a class="btn btn--primary btn--lg" href="{{ url_for('index') }}">На головну {{ icon('arrow', 18) }}</a>
+        <button class="btn btn--ghost btn--lg" type="button" data-nf-auto>🧽 Протерти за мене</button>
+      </div>
+
+      <form class="search nf__search" action="{{ url_for('catalog') }}" method="get" role="search">
+        {{ icon('search', 18) }}
+        <input type="search" name="q" placeholder="Або знайдіть потрібний засіб…" aria-label="Пошук товарів">
+      </form>
     </div>
+
+    <div class="nf__stage">
+      <div class="wipe" data-wipe>
+        <div class="wipe__under" aria-hidden="true">
+          <span class="wipe__shine"></span>
+          <div class="wipe__num">4<span class="wipe__zero">0</span>4</div>
+          <div class="wipe__note">Блищить! ✨</div>
+        </div>
+        <canvas class="wipe__grime" data-wipe-canvas aria-label="Брудна пляма. Проведіть по ній, щоб протерти" role="img"></canvas>
+        <div class="wipe__hint" data-wipe-hint>{{ icon('drop', 16) }} Проведіть пальцем або мишкою</div>
+        <div class="sponge" data-sponge aria-hidden="true"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--tight nf__more">
+  <div class="container">
+    <div class="chips nf__chips">
+      {% for key, c in categories.items() %}
+      <a class="chip" href="{{ url_for('catalog', category_name=key) }}" style="--c: {{ c.color }}"><span>{{ c.emoji }}</span>{{ c.short }}</a>
+      {% endfor %}
+      <a class="chip chip--hot" href="{{ url_for('deals') }}">% Акції</a>
+    </div>
+
+    {% if picks %}
+    <header class="section__head reveal">
+      <div><span class="eyebrow">Поки ви тут</span><h2>Ось що справді існує</h2></div>
+      <a class="link-arrow" href="{{ url_for('catalog') }}">Увесь каталог {{ icon('arrow', 18) }}</a>
+    </header>
+    <div class="grid">
+      {% for p in picks %}{{ product_card(p, loop.index0) }}{% endfor %}
+    </div>
+    {% endif %}
   </div>
 </section>
 {% endblock %}

@@ -324,7 +324,8 @@ def healthz():
 
 @app.errorhandler(404)
 def not_found(_e):
-    return render_template("404.html", title="Сторінку не знайдено"), 404
+    picks = [product_view(pid) for pid in HIGHLIGHTS[:4] if pid in PRODUCTS]
+    return render_template("404.html", title="Сторінку не знайдено", picks=picks), 404
 
 
 if __name__ == "__main__":
