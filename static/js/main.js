@@ -338,10 +338,31 @@ if (wipe) {
     ctx.globalCompositeOperation = 'source-over';
   }
 
+  // координати в системі полотна (враховує, якщо розмір картки змінився після малювання)
   const pos = (e) => {
     const r = canvas.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
+    return {
+      x: (e.clientX - r.left) * (w / r.width),
+      y: (e.clientY - r.top) * (h / r.height),
+      cx: e.clientX - r.left, // для губки й піни — у пікселях екрана
+      cy: e.clientY - r.top,
+    };
   };
+
+  // підганяємо полотно під новий розмір картки, зберігаючи вже протерте
+  function resizeCanvas() {
+    const r = wipe.getBoundingClientRect();
+    if (!w || (Math.abs(r.width - w) < 1 && Math.abs(r.height - h) < 1)) return;
+    if (!wipe.classList.contains('is-touched')) { paintGrime(); return; }
+    const copy = document.createElement('canvas');
+    copy.width = canvas.width; copy.height = canvas.height;
+    copy.getContext('2d').drawImage(canvas, 0, 0);
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = r.width; h = r.height;
+    canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.drawImage(copy, 0, 0, w, h);
+  }
 
   function scrub(a, b) {
     ctx.globalCompositeOperation = 'destination-out';
@@ -364,7 +385,7 @@ if (wipe) {
     const b = document.createElement('i');
     const s = rand(8, 22);
     b.className = 'foam';
-    b.style.cssText = `left:${p.x + rand(-26, 26) - s / 2}px;top:${p.y + rand(-14, 14) - s / 2}px;width:${s}px;height:${s}px;--fx:${rand(-20, 20)}px;--fy:${rand(-50, -15)}px`;
+    b.style.cssText = `left:${(p.cx ?? p.x) + rand(-26, 26) - s / 2}px;top:${(p.cy ?? p.y) + rand(-14, 14) - s / 2}px;width:${s}px;height:${s}px;--fx:${rand(-20, 20)}px;--fy:${rand(-50, -15)}px`;
     wipe.append(b);
     b.addEventListener('animationend', () => b.remove());
   }
@@ -413,7 +434,7 @@ if (wipe) {
     toast({ title: 'Ідеальна чистота ✨', text: 'Ви знайшли 404 — але засоби в каталозі справжні', link: { href: '/catalog', label: 'Каталог →' } });
   }
 
-  const moveSponge = (p) => { sponge.style.transform = `translate(${p.x}px, ${p.y}px)`; };
+  const moveSponge = (p) => { sponge.style.transform = `translate(${p.cx ?? p.x}px, ${p.cy ?? p.y}px) rotate(-12deg)`; /* поворот ПІСЛЯ зсуву, інакше губка «їде» */ };
 
   wipe.addEventListener('pointerdown', (e) => {
     if (done) return;
@@ -469,11 +490,12 @@ if (wipe) {
 
   // малюємо після завантаження шрифтів, щоб напис був фірмовим
   (document.fonts?.ready || Promise.resolve()).then(paintGrime);
-  let rt;
-  addEventListener('resize', () => {
-    if (done || Math.abs(wipe.getBoundingClientRect().width - w) < 2) return; // ігноруємо «стрибки» адресного рядка на мобільних
-    clearTimeout(rt); rt = setTimeout(() => { paintGrime(); update(); }, 200);
-  });
+  // будь-яка зміна розміру картки (шрифти, скролбар, поворот екрана) — підганяємо полотно
+  if ('ResizeObserver' in window) {
+    new ResizeObserver(() => { if (!done) resizeCanvas(); }).observe(wipe);
+  } else {
+    addEventListener('resize', () => { if (!done) resizeCanvas(); });
+  }
 }
 
 /* ---------------------------------------------------------------- cookie-утиліти */

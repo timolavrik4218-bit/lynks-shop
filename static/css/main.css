@@ -715,10 +715,9 @@ p { margin: 0; }
     radial-gradient(circle at 38% 75%, rgb(0 0 0 / .1) 0 2px, transparent 3px),
     linear-gradient(180deg, #fde047 0 62%, #16a34a 62%);
   box-shadow: 0 10px 20px -6px rgb(0 0 0 / .35), inset 0 -3px 0 rgb(0 0 0 / .12);
-  rotate: -12deg;
 }
 .wipe:hover .sponge, .wipe.is-active .sponge { opacity: 1; }
-.wipe.is-active .sponge { scale: .94; }
+.wipe.is-active .sponge { scale: .92; }
 .foam {
   position: absolute; z-index: 2; pointer-events: none; border-radius: 50%;
   background: radial-gradient(circle at 30% 30%, #fff, rgb(255 255 255 / .55) 45%, rgb(186 230 253 / .35) 70%);
